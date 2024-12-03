@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Shop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e0f7fa; /* Soft background color */
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            scroll-behavior: smooth;
+        }
+        .container {
+            max-width: 600px; /* Adjusted for larger screens */
+            margin: auto;
+            padding: 20px;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            background-color: #ffffff; /* White background for the container */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            color: #0056b3; /* Darker blue for headings */
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #007bff;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s; /* Animation on hover */
+        }
+        button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05); /* Slight scale effect on hover */
+        }
+        .item-list {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #007bff;
+            border-radius: 5px;
+            margin-top: 5px;
+            background-color: #f9f9f9;
+            transition: background-color 0.3s;
+        }
+        .item:hover {
+            background-color: #e9f5ff;
+        }
+        .receipt, .purchased-items, .item-management {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px;
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            display: none;
+            z-index: 1000;
+        }
+        .clear-cart {
+            margin-top: 10px;
+            background-color: #dc3545;
+        }
+        .clear-cart:hover {
+            background-color: #c82333;
+        }
+        .logout {
+            background-color: #dc3545;
+            margin-top: 10px;
+        }
+        .logout:hover {
+            background-color: #c82333;
+        }
+        .add-item, .update-item {
+            background-color: #28a745;
+        }
+        .add-item:hover, .update-item:hover {
+            background-color: #218838;
+        }
+
+        /* Receipt Table Styles */
+        .receipt table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .receipt th, .receipt td {
+            padding: 10px;
+            border: 1px solid #007bff;
+            text-align: left;
+        }
+        .receipt th {
+            background-color: #007bff;
+            color: white;
+        }
+        .receipt tr:nth-child(even) {
+            background-color: #f2f2f2; /* Zebra striping */
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+                max-width: 100%; /* Full width on small screens */
+            }
+        }
+
+        /* Accessibility */
+        button:focus, input:focus, select:focus {
+            outline: 2px solid #0056b3;
+        }
+#copyright {
+    font-size: 16px;
+    color: #555;
+    background-color: #f1f1f1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-align: center;
+}
+    </style>
+</head>
+<body>
+
+<div class="notification" id="notification"></div>
+
+<div class="container">
+    <h1>Enterprise Shop</h1>
+    <div id="login">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username" aria-label="Username">
+        <input type="password" id="password" placeholder="Password" aria-label="Password">
+        <button onclick="login()" aria-label="Login button">Login</button>
+        <div class="error" id="loginError" style="display: none;"></div>
+    </div>
+
+    <div id="dashboard" style="display: none;">
+        <h2>Dashboard</h2>
+        <button class="logout" onclick="logout()" aria-label="Logout button">Logout</button>
+        <h3>Select Items</h3>
+        <select id="itemSelect" aria-label="Select item"></select>
+        <input type="number" id="itemQuantity" placeholder="Quantity" min="1" value="1" aria-label="Item quantity">
+        <button onclick="addItem()" aria-label="Add item to cart">Add to Cart</button>
+        <div class="error" id="cartError" style="display: none;"></div>
+
+        <div class="item-list" id="itemList"></div>
+
+        <h3>Total: GHC <span id="totalPrice">0.00</span></h3>
+        <button onclick="generateReceipt()" aria-label="Generate receipt">Generate Receipt</button>
+        <button onclick="printReceipt()" aria-label="Print receipt">Print Receipt</button>
+        <button onclick="showPurchasedItems()" aria-label="Show purchased items">Show Purchased Items</button>
+        <button class="clear-cart" onclick="clearCart()" aria-label="Clear cart">Clear Cart</button>
+
+        <div class="item-management">
+            <h3>Manage Items</h3>
+            <input type="text" id="newItemName" placeholder="Item Name" aria-label="New item name">
+            <input type="number" id="newItemPrice" placeholder="Item Price (GHC)" aria-label="New item price">
+            <button class="add-item" onclick="addNewItem()" aria-label="Add new item">Add Item</button>
+            <input type="text" id="updateItemName" placeholder="Item Name to Update" aria-label="Item name to update">
+            <input type="number" id="updateItemPrice" placeholder="New Item Price (GHC)" aria-label="New item price">
+            <button class="update-item" onclick="updateItem()" aria-label="Update item price">Update Item</button>
+        </div>
+
+        <div class="receipt" id="receipt" style="display: none;"></div>
+    </div>
+
+    <div class="purchased-items" id="purchasedItems" style="display: none;">
+        <h2>Purchased Items</h2>
+        <div id="purchasedList"></div>
+        <h3>Total Items Purchased: <span id="totalItemsPurchased">0</span></h3>
+        <button onclick="backToDashboard()" aria-label="Back to dashboard">Back to Dashboard</button>
+    </div>
+</div>
+
+<script>
+    let cart = [];
+    let total = 0;
+    let items = [];
+
+    // Load purchased items from localStorage
+    function loadPurchasedItems() {
+        return JSON.parse(localStorage.getItem('purchasedItems')) || [];
+    }
+
+    // Save purchased items to localStorage
+    function savePurchasedItems() {
+        localStorage.setItem('purchasedItems', JSON.stringify(cart));
+    }
+
+    // Load items from localStorage
+    function loadItems() {
+        return JSON.parse(localStorage.getItem('items')) || [];
+    }
+
+    // Save items to localStorage
+    function saveItems() {
+        localStorage.setItem('items', JSON.stringify(items));
+    }
+
+    function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const loginError = document.getElementById('loginError');
+        // Simple authentication logic
+        if (username && password) {
+            loginError.style.display = 'none';
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            loadItems(); // Load items on login
+            updateItemSelect();
+        } else {
+            loginError.textContent = 'Please enter a username and password.';
+            loginError.style.display = 'block';
+        }
+    }
+
+    function logout() {
+        const confirmLogout = confirm("Do you want to save your cart before logging out?");
+        if (confirmLogout) {
+            savePurchasedItems(); // Save cart before logging out
+        } else {
+            cart = [];
+            total = 0;
+            localStorage.removeItem('purchasedItems'); // Clear purchased items
+        }
+        localStorage.removeItem('items'); // Clear items
+        document.getElementById('dashboard').style.display = 'none';
+        document.getElementById('login').style.display = 'block';
+    }
+
+    function addItem() {
+        const itemId = parseInt(document.getElementById('itemSelect').value);
+        const quantity = parseInt(document.getElementById('itemQuantity').value);
+        const cartError = document.getElementById('cartError');
+        cartError.style.display = 'none';
+
+        if (itemId && quantity > 0) {
+            const item = items[itemId - 1]; // Adjust for zero-indexed array
+            const cartItem = {
+                id: itemId,
+                name: item.name,
+                price: item.price,
+                quantity: quantity
+            };
+
+            cart.push(cartItem);
+            total += item.price * quantity;
+            showNotification(`Added ${quantity} x ${item.name} to the cart.`);
+
+            updateItemList();
+            savePurchasedItems();
+        } else {
+            cartError.textContent = 'Please select an item and enter a valid quantity.';
+            cartError.style.display = 'block';
+        }
+    }
+
+    function updateItemSelect() {
+        const itemSelect = document.getElementById('itemSelect');
+        itemSelect.innerHTML = '<option value="">Choose an item</option>';
+        items.forEach((item, index) => {
+            itemSelect.innerHTML += `<option value="${index + 1}">${item.name} - GHC ${item.price.toFixed(2)}</option>`;
+        });
+    }
+
+    function addNewItem() {
+        const name = document.getElementById('newItemName').value;
+        const price = parseFloat(document.getElementById('newItemPrice').value);
+        if (name && !isNaN(price) && price > 0) {
+            const newItem = { name: name, price: price };
+            items.push(newItem);
+            saveItems();
+            updateItemSelect();
+            showNotification(`Added new item: ${name} - GHC ${price.toFixed(2)}`);
+            document.getElementById('newItemName').value = '';
+            document.getElementById('newItemPrice').value = '';
+        } else {
+            showNotification('Please enter a valid item name and price.');
+        }
+    }
+
+    function updateItem() {
+        const name = document.getElementById('updateItemName').value;
+        const newPrice = parseFloat(document.getElementById('updateItemPrice').value);
+        const itemIndex = items.findIndex(item => item.name.toLowerCase() === name.toLowerCase());
+
+        if (itemIndex !== -1 && !isNaN(newPrice) && newPrice > 0) {
+            items[itemIndex].price = newPrice;
+            saveItems();
+            updateItemSelect();
+            showNotification(`Updated ${name} to GHC ${newPrice.toFixed(2)}`);
+            document.getElementById('updateItemName').value = '';
+            document.getElementById('updateItemPrice').value = '';
+        } else {
+            showNotification('Please enter a valid item name and new price.');
+        }
+    }
+
+    function updateItemList() {
+        const itemList = document.getElementById('itemList');
+        itemList.innerHTML = '';
+        cart.forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.classList.add('item');
+            itemDiv.innerHTML = `
+                <span>${item.name} - GHC ${item.price.toFixed(2)} x ${item.quantity}</span>
+                <button onclick="confirmRemoveItem(${item.id})">Remove</button>`;
+            itemList.appendChild(itemDiv);
+        });
+        document.getElementById('totalPrice').innerText = total.toFixed(2);
+    }
+
+    function confirmRemoveItem(itemId) {
+        if (confirm("Are you sure you want to remove this item from the cart?")) {
+            removeItem(itemId);
+        }
+    }
+
+    function removeItem(itemId) {
+        const itemIndex = cart.findIndex(i => i.id === itemId);
+        if (itemIndex > -1) {
+            const item = cart[itemIndex];
+            total -= item.price * item.quantity;
+            cart.splice(itemIndex, 1);
+            showNotification(`Removed ${item.name} from the cart.`);
+            updateItemList();
+            savePurchasedItems(); // Save updated cart
+        }
+    }
+
+    function clearCart() {
+        cart = [];
+        total = 0;
+        updateItemList();
+        savePurchasedItems(); // Save cleared cart
+    }
+
+    function generateReceipt() {
+        const receipt = document.getElementById('receipt');
+        receipt.style.display = 'block';
+        let receiptContent = `<h2>Receipt #${Math.floor(Math.random() * 1000000)}</h2>
+                              <table>
+                                  <tr>
+                                      <th>Item</th>
+                                      <th>Description</th>
+                                      <th>Quantity</th>
+                                      <th>Price (GHC)</th>
+                                  </tr>`;
+        cart.forEach(item => {
+            receiptContent += `<tr>
+                                    <td>${item.name}</td>
+                                    <td>Sample description for ${item.name}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>${(item.price * item.quantity).toFixed(2)}</td>
+                                </tr>`;
+        });
+        receiptContent += `</table>
+                           <h3>Total: GHC ${total.toFixed(2)}</h3>`;
+        receipt.innerHTML = receiptContent;
+    }
+
+    function printReceipt() {
+        const receipt = document.getElementById('receipt');
+        const printWindow = window.open('', '', 'height=600,width=800');
+        printWindow.document.write('<html><head><title>Receipt</title>');
+        printWindow.document.write('<style>body { font-family: Arial, sans-serif; }</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(receipt.innerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+    function showNotification(message) {
+        const notification = document.getElementById('notification');
+        notification.textContent = message;
+        notification.style.display = 'block';
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
+
+    function showPurchasedItems() {
+        const purchasedList = document.getElementById('purchasedList');
+        purchasedList.innerHTML = '';
+        const purchasedItems = loadPurchasedItems();
+        purchasedItems.forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.innerHTML = `${item.name} - GHC ${item.price.toFixed(2)} x ${item.quantity}`;
+            purchasedList.appendChild(itemDiv);
+        });
+        document.getElementById('totalItemsPurchased').innerText = purchasedItems.length;
+        document.getElementById('dashboard').style.display = 'none';
+        document.getElementById('purchasedItems').style.display = 'block';
+    }
+
+    function backToDashboard() {
+        document.getElementById('purchasedItems').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+    }
+
+    // Initialize items and cart from localStorage on page load
+    window.onload = function() {
+        items = loadItems(); // Load items
+        cart = loadPurchasedItems(); // Load purchased items
+        if (cart.length > 0) {
+            document.getElementById('dashboard').style.display = 'block';
+            updateItemList();
+        }
+        updateItemSelect(); // Populate item select options
+    };
+</script>
+<p>&copy; <script>document.write(new Date().getFullYear())</script> Kelvin Dampson. All rights reserved.</p>
+
+</body>
+</html>
